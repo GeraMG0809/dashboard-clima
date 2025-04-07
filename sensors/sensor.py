@@ -6,7 +6,7 @@ import websockets
 import sys
 import threading
 
-# Bandera para detener el sensor
+# bandera para detener el sensor
 stop_flag = False
 
 def input_listener():
@@ -29,8 +29,8 @@ async def sensor(sensor_id):
                 while not stop_flag:
                     data = {
                         "id": sensor_id,
-                        "temperature": round(random.uniform(20, 35), 2),
-                        "humidity": round(random.uniform(30, 70), 2),
+                        "temperatura": round(random.uniform(20, 35), 2),
+                        "humedad": round(random.uniform(30, 70), 2),
                         "timestamp": time.time()
                     }
                     await websocket.send(json.dumps(data))
