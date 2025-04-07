@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>🌐 IoT Dashboard</title>
+  <link rel="stylesheet" href="../style/style.css">
+</head>
+<body>
+  <header>
+    <h1>🌡️ IoT Dashboard en Tiempo Real</h1>
+  </header>
+
+  <ul id="sensorList"></ul>
+
+  <script>
+    const ws = new WebSocket("ws://localhost:8000/ws");
+    const sensorList = document.getElementById("sensorList");
+    const sensors = {};
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      const id = data.id;
+
+      sensors[id] = {
+        temperature: data.temperature,
+        humidity: data.humidity,
+        lastUpdate: Date.now(),
+        status: "ok"
+      };
+
+      render();
+    };
+
+    function render() {
+      sensorList.innerHTML = "";
+      for (const [id, info] of Object.entries(sensors)) {
+        const li = document.createElement("li");
+        li.className = "sensor-card";
+
+        const statusText = info.status === "ok"
+          ? `<span class="ok">✅ Activo</span>`
+          : `<span class="fail">❌ Desconectado</span>`;
+
+        li.innerHTML = `
+          <div class="sensor-id">${id}</div>
+          <div>🌡️ Temperatura: ${info.temperature ?? "--"}°C</div>
+          <div>💧 Humedad: ${info.humidity ?? "--"}%</div>
+          <div class="status">${statusText}</div>
+        `;
+
+        sensorList.appendChild(li);
+      }
+    }
+
+    setInterval(async () => {
+      try {
+        const res = await fetch("http://localhost:8000/sensors/alive");
+        const json = await res.json();
+
+        const now = Date.now();
+
+        for (const [id, info] of Object.entries(sensors)) {
+          if (!json.active_sensors.includes(id) || now - info.lastUpdate > 6000) {
+            sensors[id].status = "fail";
+          } else {
+            sensors[id].status = "ok";
+          }
+        }
+
+        render();
+      } catch (err) {
+        console.error("Error al obtener sensores vivos:", err);
+      }
+    }, 5000);
+  </script>
+</body>
+</html>
